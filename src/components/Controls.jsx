@@ -8,6 +8,8 @@ export default function Controls({
   brightness,
   contrast,
   gamma,
+  edges,
+  edgeThreshold,
   onChange,
   disabled,
 }) {
@@ -107,6 +109,28 @@ export default function Controls({
       >
         Restablecer ajustes
       </button>
+
+      <label className="control control--check">
+        <input
+          type="checkbox"
+          checked={edges}
+          disabled={disabled}
+          onChange={(e) => onChange({ edges: e.target.checked })}
+        />
+        <span>Bordes (Sobel)</span>
+      </label>
+
+      <label className="control">
+        <span>Umbral bordes: {edgeThreshold}</span>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={edgeThreshold}
+          disabled={disabled || !edges}
+          onChange={(e) => onChange({ edgeThreshold: Number(e.target.value) })}
+        />
+      </label>
     </div>
   );
 }

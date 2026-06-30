@@ -19,6 +19,45 @@ header h1 {
   font-size: 0.85rem;
 }
 
+/* --- Fuente (subida + webcam) --- */
+.fuente {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.fuente .uploader {
+  flex: 1;
+}
+
+.webcam-btn {
+  flex-shrink: 0;
+  background: #16171d;
+  color: #e8e8ea;
+  border: 1px solid #2a2b33;
+  border-radius: 10px;
+  padding: 0 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.webcam-btn:hover {
+  border-color: #c084fc;
+}
+
+.webcam-btn--activo {
+  background: #c084fc;
+  color: #0d0d0f;
+  border-color: #c084fc;
+}
+
+.error {
+  margin: 0;
+  color: #ff7b7b;
+  font-size: 0.85rem;
+}
+
 /* --- Zona de subida --- */
 .uploader {
   border: 2px dashed #3a3a40;

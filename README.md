@@ -4,10 +4,11 @@ App web para convertir imágenes en arte ASCII. Hecha con **Vite + React**.
 
 ## Features
 
-- Subida de imagen por botón o arrastrar/soltar.
+- Subida de imagen por botón o arrastrar/soltar, **o webcam en tiempo real**.
 - Slider de ancho/resolución (20–240 caracteres).
 - Varios sets de caracteres (`detallada`, `estandar`, `simple`, `bloques`) + opción de invertir.
 - Ajustes de imagen: brillo, contraste y gamma (con botón para restablecer).
+- Modo **detección de bordes (Sobel)**: line-art con caracteres direccionales (`| - / \`) y umbral ajustable.
 - Modo color: cada carácter toma el color del píxel original.
 - Copiar al portapapeles y descargar como `.txt` o `.png` (respeta el color).
 
@@ -28,8 +29,10 @@ src/
     asciiConverter.js  # lógica pura imagen -> celdas ASCII
   components/
     ImageUploader.jsx  # input + drag & drop
-    Controls.jsx       # ancho, charset, invertir, color
+    Controls.jsx       # ancho, charset, invertir, color, ajustes, bordes
     AsciiOutput.jsx    # render (texto/color) + copiar/descargar
+  hooks/
+    useWebcam.js       # cámara + bucle de animación para el modo en vivo
   App.jsx              # estado y composición
 ```
 

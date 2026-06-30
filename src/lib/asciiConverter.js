@@ -34,6 +34,44 @@ function construirLUT(brightness, contrast, gamma) {
 // LUT identidad: se usa cuando los tres ajustes están en su valor neutro.
 const LUT_IDENTIDAD = construirLUT(0, 0, 1);
 
+const clamp = (v, min, max) => (v < min ? min : v > max ? max : v);
+
+// Magnitud máxima teórica del operador Sobel para canales 0..255
+// (suma de pesos positivos = 4, por 255).
+const SOBEL_MAX = 1020;
+
+/**
+ * Decide el carácter de una celda en modo "detección de bordes" usando el
+ * operador Sobel sobre la rejilla de luminancia. Si el borde supera el umbral,
+ * devuelve un carácter direccional (| - / \) alineado con la orientación del
+ * borde; si no, un espacio.
+ */
+function caracterBorde(lum, x, y, cols, rows, umbral) {
+  const at = (xx, yy) =>
+    lum[clamp(yy, 0, rows - 1) * cols + clamp(xx, 0, cols - 1)];
+  const tl = at(x - 1, y - 1);
+  const tc = at(x, y - 1);
+  const tr = at(x + 1, y - 1);
+  const ml = at(x - 1, y);
+  const mr = at(x + 1, y);
+  const bl = at(x - 1, y + 1);
+  const bc = at(x, y + 1);
+  const br = at(x + 1, y + 1);
+
+  const gx = tr + 2 * mr + br - (tl + 2 * ml + bl);
+  const gy = bl + 2 * bc + br - (tl + 2 * tc + tr);
+  const mag = Math.sqrt(gx * gx + gy * gy) / SOBEL_MAX;
+  if (mag < umbral / 100) return " ";
+
+  // El carácter representa la línea del borde (perpendicular al gradiente).
+  let ang = (Math.atan2(gy, gx) * 180) / Math.PI;
+  if (ang < 0) ang += 180;
+  if (ang < 22.5 || ang >= 157.5) return "|";
+  if (ang < 67.5) return "\\";
+  if (ang < 112.5) return "-";
+  return "/";
+}
+
 /**
  * Convierte una imagen ya cargada en una matriz de celdas ASCII.
  *
@@ -45,14 +83,28 @@ const LUT_IDENTIDAD = construirLUT(0, 0, 1);
  * @param {number} [opts.brightness] - brillo -100..100 (0 por defecto).
  * @param {number} [opts.contrast] - contraste -100..100 (0 por defecto).
  * @param {number} [opts.gamma] - gamma 0.1..3 (1 por defecto).
+ * @param {boolean} [opts.edges] - modo detección de bordes (Sobel).
+ * @param {number} [opts.edgeThreshold] - umbral de borde 0..100 (20 por defecto).
  * @returns {Array<Array<{char:string,r:number,g:number,b:number}>>}
  */
 export function imageToAscii(
   image,
-  { width, charset, invert, brightness = 0, contrast = 0, gamma = 1 }
+  {
+    width,
+    charset,
+    invert,
+    brightness = 0,
+    contrast = 0,
+    gamma = 1,
+    edges = false,
+    edgeThreshold = 20,
+  }
 ) {
   const cols = Math.max(1, Math.floor(width));
-  const ratio = image.height / image.width;
+  // Las fuentes de vídeo exponen videoWidth/Height; las imágenes width/height.
+  const srcW = image.videoWidth || image.naturalWidth || image.width;
+  const srcH = image.videoHeight || image.naturalHeight || image.height;
+  const ratio = srcH / srcW;
   const rows = Math.max(1, Math.round(cols * ratio * ASPECTO_CARACTER));
 
   // Canvas fuera de pantalla del tamaño de la rejilla ASCII: drawImage hace
@@ -70,22 +122,39 @@ export function imageToAscii(
   const neutro = brightness === 0 && contrast === 0 && gamma === 1;
   const lut = neutro ? LUT_IDENTIDAD : construirLUT(brightness, contrast, gamma);
 
+  // Primer paso: color ajustado por celda + rejilla de luminancia (la necesita
+  // Sobel, que mira los vecinos de cada celda).
+  const n = cols * rows;
+  const R = new Uint8Array(n);
+  const G = new Uint8Array(n);
+  const B = new Uint8Array(n);
+  const lum = new Float32Array(n);
+  for (let p = 0; p < n; p++) {
+    const i = p * 4;
+    const r = lut[data[i]];
+    const g = lut[data[i + 1]];
+    const b = lut[data[i + 2]];
+    R[p] = r;
+    G[p] = g;
+    B[p] = b;
+    lum[p] = 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  // Segundo paso: elegir el carácter de cada celda.
   const result = [];
   for (let y = 0; y < rows; y++) {
     const row = [];
     for (let x = 0; x < cols; x++) {
-      const i = (y * cols + x) * 4;
-      const r = lut[data[i]];
-      const g = lut[data[i + 1]];
-      const b = lut[data[i + 2]];
-
-      // Luminancia perceptual (0..255) sobre los valores ya ajustados.
-      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-      let t = lum / 255; // 0 = oscuro, 1 = claro
-      if (invert) t = 1 - t;
-
-      const index = Math.round(t * lastIndex);
-      row.push({ char: ramp[index], r, g, b });
+      const p = y * cols + x;
+      let char;
+      if (edges) {
+        char = caracterBorde(lum, x, y, cols, rows, edgeThreshold);
+      } else {
+        let t = lum[p] / 255; // 0 = oscuro, 1 = claro
+        if (invert) t = 1 - t;
+        char = ramp[Math.round(t * lastIndex)];
+      }
+      row.push({ char, r: R[p], g: G[p], b: B[p] });
     }
     result.push(row);
   }
