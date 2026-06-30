@@ -14,6 +14,9 @@ export default function App() {
     charsetKey: charsetPorDefecto,
     invert: false,
     colorMode: false,
+    brightness: 0,
+    contrast: 0,
+    gamma: 1,
   });
 
   const actualizar = (cambios) => setOpts((prev) => ({ ...prev, ...cambios }));
@@ -24,8 +27,19 @@ export default function App() {
       width: opts.width,
       charset: charsets[opts.charsetKey],
       invert: opts.invert,
+      brightness: opts.brightness,
+      contrast: opts.contrast,
+      gamma: opts.gamma,
     });
-  }, [image, opts.width, opts.charsetKey, opts.invert]);
+  }, [
+    image,
+    opts.width,
+    opts.charsetKey,
+    opts.invert,
+    opts.brightness,
+    opts.contrast,
+    opts.gamma,
+  ]);
 
   return (
     <main className="app">

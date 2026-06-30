@@ -8,6 +8,33 @@
 const ASPECTO_CARACTER = 0.5;
 
 /**
+ * Construye una tabla de búsqueda (256 entradas) que mapea cada valor de canal
+ * 0..255 a su versión ajustada por brillo, contraste y gamma. Aplicar la LUT a
+ * cada canal es mucho más rápido que recalcular las fórmulas por píxel.
+ *
+ * @param {number} brightness - desplazamiento -100..100 (0 = sin cambio).
+ * @param {number} contrast - intensidad -100..100 (0 = sin cambio).
+ * @param {number} gamma - corrección gamma 0.1..3 (1 = sin cambio).
+ * @returns {Uint8ClampedArray}
+ */
+function construirLUT(brightness, contrast, gamma) {
+  // Fórmula estándar de contraste: factor centrado en 128.
+  const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+  const invGamma = 1 / gamma;
+  const lut = new Uint8ClampedArray(256);
+  for (let i = 0; i < 256; i++) {
+    let v = i + brightness; // brillo
+    v = factor * (v - 128) + 128; // contraste
+    v = 255 * Math.pow(Math.max(0, v) / 255, invGamma); // gamma
+    lut[i] = v; // Uint8ClampedArray recorta automáticamente a 0..255
+  }
+  return lut;
+}
+
+// LUT identidad: se usa cuando los tres ajustes están en su valor neutro.
+const LUT_IDENTIDAD = construirLUT(0, 0, 1);
+
+/**
  * Convierte una imagen ya cargada en una matriz de celdas ASCII.
  *
  * @param {HTMLImageElement|ImageBitmap} image - imagen cargada y lista.
@@ -15,9 +42,15 @@ const ASPECTO_CARACTER = 0.5;
  * @param {number} opts.width - número de columnas (caracteres por fila).
  * @param {string} opts.charset - rampa de caracteres (oscuro -> claro).
  * @param {boolean} opts.invert - invierte el mapeo claro/oscuro.
+ * @param {number} [opts.brightness] - brillo -100..100 (0 por defecto).
+ * @param {number} [opts.contrast] - contraste -100..100 (0 por defecto).
+ * @param {number} [opts.gamma] - gamma 0.1..3 (1 por defecto).
  * @returns {Array<Array<{char:string,r:number,g:number,b:number}>>}
  */
-export function imageToAscii(image, { width, charset, invert }) {
+export function imageToAscii(
+  image,
+  { width, charset, invert, brightness = 0, contrast = 0, gamma = 1 }
+) {
   const cols = Math.max(1, Math.floor(width));
   const ratio = image.height / image.width;
   const rows = Math.max(1, Math.round(cols * ratio * ASPECTO_CARACTER));
@@ -34,16 +67,19 @@ export function imageToAscii(image, { width, charset, invert }) {
   const ramp = charset;
   const lastIndex = ramp.length - 1;
 
+  const neutro = brightness === 0 && contrast === 0 && gamma === 1;
+  const lut = neutro ? LUT_IDENTIDAD : construirLUT(brightness, contrast, gamma);
+
   const result = [];
   for (let y = 0; y < rows; y++) {
     const row = [];
     for (let x = 0; x < cols; x++) {
       const i = (y * cols + x) * 4;
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
+      const r = lut[data[i]];
+      const g = lut[data[i + 1]];
+      const b = lut[data[i + 2]];
 
-      // Luminancia perceptual (0..255).
+      // Luminancia perceptual (0..255) sobre los valores ya ajustados.
       const lum = 0.299 * r + 0.587 * g + 0.114 * b;
       let t = lum / 255; // 0 = oscuro, 1 = claro
       if (invert) t = 1 - t;

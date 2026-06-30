@@ -5,9 +5,14 @@ export default function Controls({
   charsetKey,
   invert,
   colorMode,
+  brightness,
+  contrast,
+  gamma,
   onChange,
   disabled,
 }) {
+  const ajustesNeutros = brightness === 0 && contrast === 0 && gamma === 1;
+
   return (
     <div className="controls" data-disabled={disabled}>
       <label className="control">
@@ -56,6 +61,52 @@ export default function Controls({
         />
         <span>Color</span>
       </label>
+
+      <label className="control">
+        <span>Brillo: {brightness}</span>
+        <input
+          type="range"
+          min="-100"
+          max="100"
+          value={brightness}
+          disabled={disabled}
+          onChange={(e) => onChange({ brightness: Number(e.target.value) })}
+        />
+      </label>
+
+      <label className="control">
+        <span>Contraste: {contrast}</span>
+        <input
+          type="range"
+          min="-100"
+          max="100"
+          value={contrast}
+          disabled={disabled}
+          onChange={(e) => onChange({ contrast: Number(e.target.value) })}
+        />
+      </label>
+
+      <label className="control">
+        <span>Gamma: {gamma.toFixed(1)}</span>
+        <input
+          type="range"
+          min="0.1"
+          max="3"
+          step="0.1"
+          value={gamma}
+          disabled={disabled}
+          onChange={(e) => onChange({ gamma: Number(e.target.value) })}
+        />
+      </label>
+
+      <button
+        type="button"
+        className="control__reset"
+        disabled={disabled || ajustesNeutros}
+        onClick={() => onChange({ brightness: 0, contrast: 0, gamma: 1 })}
+      >
+        Restablecer ajustes
+      </button>
     </div>
   );
 }

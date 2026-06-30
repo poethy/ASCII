@@ -78,6 +78,23 @@ header h1 {
   padding: 6px 8px;
 }
 
+.control__reset {
+  align-self: flex-end;
+  background: transparent;
+  color: #c084fc;
+  border: 1px solid #c084fc;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.control__reset:disabled {
+  color: #555;
+  border-color: #333;
+  cursor: default;
+}
+
 /* --- Salida --- */
 .output {
   display: flex;
