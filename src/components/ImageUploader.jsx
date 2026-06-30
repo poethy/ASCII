@@ -1,8 +1,15 @@
 import { useRef, useState } from "react";
 
-// Carga un archivo de imagen y devuelve un HTMLImageElement ya listo al padre.
-function cargarImagen(file, onImage) {
-  if (!file || !file.type.startsWith("image/")) return;
+// Carga el archivo elegido y lo enruta según su tipo:
+// - vídeo -> onVideo(file)
+// - imagen -> carga un HTMLImageElement y onImage(img, nombre)
+function cargar(file, onImage, onVideo) {
+  if (!file) return;
+  if (file.type.startsWith("video/")) {
+    onVideo(file);
+    return;
+  }
+  if (!file.type.startsWith("image/")) return;
   const url = URL.createObjectURL(file);
   const img = new Image();
   img.onload = () => {
@@ -12,14 +19,14 @@ function cargarImagen(file, onImage) {
   img.src = url;
 }
 
-export default function ImageUploader({ onImage }) {
+export default function ImageUploader({ onImage, onVideo }) {
   const inputRef = useRef(null);
   const [arrastrando, setArrastrando] = useState(false);
 
   const handleDrop = (e) => {
     e.preventDefault();
     setArrastrando(false);
-    cargarImagen(e.dataTransfer.files?.[0], onImage);
+    cargar(e.dataTransfer.files?.[0], onImage, onVideo);
   };
 
   return (
@@ -36,12 +43,12 @@ export default function ImageUploader({ onImage }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         hidden
-        onChange={(e) => cargarImagen(e.target.files?.[0], onImage)}
+        onChange={(e) => cargar(e.target.files?.[0], onImage, onVideo)}
       />
       <p>
-        <strong>Arrastra una imagen aquí</strong> o haz clic para elegir un archivo
+        <strong>Arrastra una imagen o vídeo aquí</strong> o haz clic para elegir un archivo
       </p>
     </div>
   );

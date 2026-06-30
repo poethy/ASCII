@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { asciiToText, asciiToCanvas } from "../lib/asciiConverter";
+import { descargarBlob } from "../lib/descargar";
 
 // Agrupa celdas consecutivas con el mismo color en un solo <span> para no
 // generar decenas de miles de nodos cuando se renderiza en color.
@@ -41,15 +42,6 @@ export default function AsciiOutput({ rows, colorMode }) {
     await navigator.clipboard.writeText(texto);
     setCopiado(true);
     setTimeout(() => setCopiado(false), 1500);
-  };
-
-  const descargarBlob = (blob, nombre) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = nombre;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const descargarTxt = () => {

@@ -2,30 +2,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ImageUploader from "./components/ImageUploader";
 import Controls from "./components/Controls";
 import AsciiOutput from "./components/AsciiOutput";
-import { imageToAscii } from "./lib/asciiConverter";
-import { charsets, charsetPorDefecto } from "./lib/charsets";
+import VideoControls from "./components/VideoControls";
+import { charsetPorDefecto } from "./lib/charsets";
+import { rowsDeFuente } from "./lib/convertir";
+import { exportarGif, exportarWebM } from "./lib/videoExport";
+import { descargarBlob } from "./lib/descargar";
 import { useWebcam } from "./hooks/useWebcam";
 import "./styles.css";
-
-// Traduce el estado de opciones a los argumentos de imageToAscii.
-function construirRows(fuente, o) {
-  return imageToAscii(fuente, {
-    width: o.width,
-    charset: charsets[o.charsetKey],
-    invert: o.invert,
-    brightness: o.brightness,
-    contrast: o.contrast,
-    gamma: o.gamma,
-    edges: o.edges,
-    edgeThreshold: o.edgeThreshold,
-  });
-}
 
 export default function App() {
   const [image, setImage] = useState(null);
   const [nombre, setNombre] = useState("");
   const [live, setLive] = useState(false);
-  const [errorCam, setErrorCam] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const [rows, setRows] = useState(null);
   const [opts, setOpts] = useState({
     width: 100,
@@ -39,43 +28,176 @@ export default function App() {
     edgeThreshold: 20,
   });
 
-  // Las opciones más recientes, accesibles desde el bucle de la webcam sin
-  // tener que reiniciarlo en cada cambio.
+  // Estado del vídeo subido.
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [playing, setPlaying] = useState(false);
+  const [dur, setDur] = useState(0);
+  const [cur, setCur] = useState(0);
+  const [exportando, setExportando] = useState(null); // 'gif' | 'webm' | null
+  const [progresoExp, setProgresoExp] = useState(0);
+
+  const fileVideoRef = useRef(null);
+  const exportandoRef = useRef(null);
+
+  // Opciones más recientes, accesibles desde los bucles sin reiniciarlos.
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
   const actualizar = (cambios) => setOpts((prev) => ({ ...prev, ...cambios }));
 
-  // Modo imagen estática: recalcular cuando cambian la imagen o las opciones.
+  // --- Modo imagen estática ---
   useEffect(() => {
-    if (live || !image) return;
-    setRows(construirRows(image, opts));
-  }, [live, image, opts]);
+    if (live || videoUrl || !image) return;
+    setRows(rowsDeFuente(image, opts));
+  }, [live, videoUrl, image, opts]);
 
-  // Modo webcam en vivo: cada fotograma genera una nueva matriz ASCII.
+  // --- Modo webcam en vivo ---
   const onFrame = useCallback((video) => {
-    setRows(construirRows(video, optsRef.current));
+    setRows(rowsDeFuente(video, optsRef.current));
   }, []);
   const videoRef = useWebcam(live, onFrame, (err) => {
-    setErrorCam("No se pudo acceder a la cámara: " + (err?.message || err));
+    setErrorMsg("No se pudo acceder a la cámara: " + (err?.message || err));
     setLive(false);
   });
 
+  // --- Vídeo: metadatos / fin / búsquedas manuales ---
+  useEffect(() => {
+    const v = fileVideoRef.current;
+    if (!videoUrl || !v) return;
+    const onMeta = () => {
+      setDur(v.duration);
+      setCur(0);
+      setRows(rowsDeFuente(v, optsRef.current));
+    };
+    const onEnded = () => setPlaying(false);
+    const onSeeked = () => {
+      if (exportandoRef.current) return; // durante exportación no refrescamos la vista
+      setRows(rowsDeFuente(v, optsRef.current));
+      setCur(v.currentTime);
+    };
+    v.addEventListener("loadedmetadata", onMeta);
+    v.addEventListener("ended", onEnded);
+    v.addEventListener("seeked", onSeeked);
+    return () => {
+      v.removeEventListener("loadedmetadata", onMeta);
+      v.removeEventListener("ended", onEnded);
+      v.removeEventListener("seeked", onSeeked);
+    };
+  }, [videoUrl]);
+
+  // --- Vídeo: bucle de reproducción (~16 fps) mientras está en play ---
+  useEffect(() => {
+    const v = fileVideoRef.current;
+    if (!videoUrl || !v || !playing) return;
+    let raf;
+    let ultimo = 0;
+    let cancel = false;
+    const loop = (ts) => {
+      if (cancel) return;
+      if (ts - ultimo > 60) {
+        ultimo = ts;
+        setRows(rowsDeFuente(v, optsRef.current));
+        setCur(v.currentTime);
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancel = true;
+      cancelAnimationFrame(raf);
+    };
+  }, [videoUrl, playing]);
+
+  // --- Vídeo: re-render al cambiar opciones estando en pausa ---
+  useEffect(() => {
+    const v = fileVideoRef.current;
+    if (!videoUrl || !v || playing || exportandoRef.current) return;
+    if (v.readyState >= 2) setRows(rowsDeFuente(v, opts));
+  }, [opts, videoUrl, playing]);
+
+  const limpiarVideo = () => {
+    setVideoUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setPlaying(false);
+    setDur(0);
+    setCur(0);
+  };
+
   const usarImagen = (img, name) => {
     setLive(false);
-    setErrorCam("");
+    limpiarVideo();
+    setErrorMsg("");
     setImage(img);
     setNombre(name);
   };
 
+  const usarVideo = (file) => {
+    setLive(false);
+    setImage(null);
+    setErrorMsg("");
+    setNombre(file.name);
+    setPlaying(false);
+    setCur(0);
+    setDur(0);
+    setVideoUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+  };
+
   const alternarWebcam = () => {
-    setErrorCam("");
+    setErrorMsg("");
     if (live) {
       setLive(false); // congela el último fotograma
     } else {
       setImage(null);
+      limpiarVideo();
       setNombre("");
       setLive(true);
+    }
+  };
+
+  const togglePlay = () => {
+    const v = fileVideoRef.current;
+    if (!v) return;
+    if (playing) {
+      v.pause();
+      setPlaying(false);
+    } else {
+      v.play();
+      setPlaying(true);
+    }
+  };
+
+  const onSeek = (t) => {
+    const v = fileVideoRef.current;
+    if (v) v.currentTime = t;
+    setCur(t);
+  };
+
+  const exportar = async (formato) => {
+    const v = fileVideoRef.current;
+    if (!v) return;
+    v.pause();
+    setPlaying(false);
+    exportandoRef.current = formato;
+    setExportando(formato);
+    setProgresoExp(0);
+    try {
+      const o = optsRef.current;
+      const blob =
+        formato === "gif"
+          ? await exportarGif(v, o, setProgresoExp)
+          : await exportarWebM(v, o, setProgresoExp);
+      descargarBlob(blob, `ascii.${formato}`);
+    } catch (e) {
+      setErrorMsg("Error al exportar: " + (e?.message || e));
+    } finally {
+      exportandoRef.current = null;
+      setExportando(null);
+      setProgresoExp(0);
     }
   };
 
@@ -87,7 +209,7 @@ export default function App() {
       </header>
 
       <div className="fuente">
-        <ImageUploader onImage={usarImagen} />
+        <ImageUploader onImage={usarImagen} onVideo={usarVideo} />
         <button
           type="button"
           className={`webcam-btn ${live ? "webcam-btn--activo" : ""}`}
@@ -97,14 +219,38 @@ export default function App() {
         </button>
       </div>
 
-      {errorCam && <p className="error">{errorCam}</p>}
+      {errorMsg && <p className="error">{errorMsg}</p>}
 
-      <Controls {...opts} onChange={actualizar} disabled={!image && !live} />
+      <Controls
+        {...opts}
+        onChange={actualizar}
+        disabled={!image && !live && !videoUrl}
+      />
+
+      {videoUrl && (
+        <VideoControls
+          playing={playing}
+          onTogglePlay={togglePlay}
+          current={cur}
+          duration={dur}
+          onSeek={onSeek}
+          onExport={exportar}
+          exportando={exportando}
+          progreso={progresoExp}
+        />
+      )}
 
       <AsciiOutput rows={rows} colorMode={opts.colorMode} />
 
-      {/* Vídeo oculto que alimenta la conversión en modo webcam. */}
+      {/* Vídeos ocultos: webcam (srcObject) y archivo subido (src). */}
       <video ref={videoRef} playsInline muted style={{ display: "none" }} />
+      <video
+        ref={fileVideoRef}
+        src={videoUrl ?? undefined}
+        playsInline
+        muted
+        style={{ display: "none" }}
+      />
     </main>
   );
 }

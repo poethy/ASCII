@@ -134,6 +134,74 @@ header h1 {
   cursor: default;
 }
 
+/* --- Controles de vídeo --- */
+.videoctl {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #16171d;
+  border: 1px solid #2a2b33;
+  border-radius: 10px;
+}
+
+.videoctl__fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.videoctl__fila input[type="range"] {
+  flex: 1;
+  accent-color: #c084fc;
+}
+
+.videoctl__play {
+  width: 40px;
+  height: 36px;
+  background: #c084fc;
+  color: #0d0d0f;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.videoctl__time {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: #b5b5ba;
+  min-width: 90px;
+  text-align: right;
+}
+
+.videoctl__fila button {
+  background: transparent;
+  color: #c084fc;
+  border: 1px solid #c084fc;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.videoctl__fila button:disabled {
+  color: #555;
+  border-color: #333;
+  cursor: default;
+}
+
+.videoctl__play:disabled {
+  background: #333;
+  color: #777;
+  cursor: default;
+}
+
+.videoctl__prog {
+  font-size: 0.85rem;
+  color: #c084fc;
+}
+
 /* --- Salida --- */
 .output {
   display: flex;
