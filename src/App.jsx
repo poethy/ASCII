@@ -30,6 +30,8 @@ export default function App() {
     edges: false,
     edgeThreshold: 20,
     vizStyle: "bar",
+    palette: "clasico",
+    gain: 1.5,
   });
 
   // Estado del audio subido.
@@ -312,6 +314,10 @@ export default function App() {
           onSeek={audio.seek}
           vizStyle={opts.vizStyle}
           onStyleChange={(vizStyle) => actualizar({ vizStyle })}
+          palette={opts.palette}
+          onPaletteChange={(palette) => actualizar({ palette })}
+          gain={opts.gain}
+          onGainChange={(gain) => actualizar({ gain })}
           onExport={exportarAudio}
           exportando={exportando}
           progreso={progresoExp}

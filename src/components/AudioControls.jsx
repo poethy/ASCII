@@ -1,4 +1,5 @@
 import { estilosViz } from "../lib/audioViz";
+import { paletas } from "../lib/palettes";
 
 function formatear(s) {
   s = Math.max(0, s || 0);
@@ -15,6 +16,10 @@ export default function AudioControls({
   onSeek,
   vizStyle,
   onStyleChange,
+  palette,
+  onPaletteChange,
+  gain,
+  onGainChange,
   onExport,
   exportando,
   progreso,
@@ -59,6 +64,34 @@ export default function AudioControls({
               </option>
             ))}
           </select>
+        </label>
+
+        <label className="control">
+          <span>Paleta</span>
+          <select
+            value={palette}
+            disabled={ocupado}
+            onChange={(e) => onPaletteChange(e.target.value)}
+          >
+            {paletas.map((p) => (
+              <option key={p.key} value={p.key}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="control">
+          <span>Sensibilidad: {gain.toFixed(1)}x</span>
+          <input
+            type="range"
+            min="0.2"
+            max="4"
+            step="0.1"
+            value={gain}
+            disabled={ocupado}
+            onChange={(e) => onGainChange(Number(e.target.value))}
+          />
         </label>
 
         <button type="button" onClick={onExport} disabled={ocupado}>

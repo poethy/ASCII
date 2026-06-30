@@ -94,14 +94,19 @@ export function useAudio(url, onFrame, onError) {
     };
   }, [url]);
 
-  // Bucle de animación mientras reproduce.
+  // Bucle de animación mientras reproduce, limitado a ~30 fps para no saturar
+  // con re-renders (suficiente para el visualizador).
   useEffect(() => {
     if (!playing) return;
     let raf;
     let cancel = false;
-    const loop = () => {
+    let ultimo = 0;
+    const loop = (ts) => {
       if (cancel) return;
-      onFrameRef.current?.(analyserRef.current);
+      if (ts - ultimo >= 33) {
+        ultimo = ts;
+        onFrameRef.current?.(analyserRef.current);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);

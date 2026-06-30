@@ -9,7 +9,8 @@ App web para convertir imágenes en arte ASCII. Hecha con **Vite + React**.
 - Exportar el vídeo ASCII como **GIF** o **WebM**.
 - **Visualizador de audio**: sube un `.mp3`/audio y reacciona a la música en ASCII,
   con escala logarítmica de frecuencias y 8 modos (Bar, Wave, Line, Radial Bars,
-  Mirror Bars, Mountain, Blob, Siri), con exportación a **WebM con audio**.
+  Mirror Bars, Mountain, Blob, Siri). Paletas de color (clásico, fuego, océano,
+  neón, arcoíris, mono), control de sensibilidad y exportación a **WebM con audio**.
 - Slider de ancho/resolución (20–240 caracteres).
 - Varios sets de caracteres (`detallada`, `estandar`, `simple`, `bloques`) + opción de invertir.
 - Ajustes de imagen: brillo, contraste y gamma (con botón para restablecer).
@@ -31,9 +32,11 @@ npm run build    # build de producción
 src/
   lib/
     charsets.js        # rampas de caracteres (oscuro -> claro)
+    color.js           # utilidades de color (hsl, lerp)
+    palettes.js        # paletas de color del visualizador
     asciiConverter.js  # lógica pura imagen -> celdas ASCII (+ Sobel, render a canvas)
     convertir.js       # mapeo opciones de la app -> imageToAscii (compartido)
-    audioViz.js        # visualizador de audio (espectro / onda / espejo) -> ASCII
+    audioViz.js        # visualizador de audio (8 modos, escala log) -> ASCII
     videoExport.js     # exportación a GIF (gifenc) y WebM (MediaRecorder, +audio)
     descargar.js       # utilidad para descargar un Blob
   components/
