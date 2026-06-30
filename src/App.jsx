@@ -29,7 +29,7 @@ export default function App() {
     gamma: 1,
     edges: false,
     edgeThreshold: 20,
-    vizStyle: "spectrum",
+    vizStyle: "bar",
   });
 
   // Estado del audio subido.

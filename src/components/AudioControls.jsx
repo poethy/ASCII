@@ -1,15 +1,11 @@
+import { estilosViz } from "../lib/audioViz";
+
 function formatear(s) {
   s = Math.max(0, s || 0);
   const m = Math.floor(s / 60);
   const seg = Math.floor(s % 60);
   return `${m}:${String(seg).padStart(2, "0")}`;
 }
-
-const ESTILOS = [
-  { key: "spectrum", label: "Barras de espectro" },
-  { key: "waveform", label: "Forma de onda" },
-  { key: "mirror", label: "Barras espejo" },
-];
 
 export default function AudioControls({
   playing,
@@ -57,7 +53,7 @@ export default function AudioControls({
             disabled={ocupado}
             onChange={(e) => onStyleChange(e.target.value)}
           >
-            {ESTILOS.map((s) => (
+            {estilosViz.map((s) => (
               <option key={s.key} value={s.key}>
                 {s.label}
               </option>

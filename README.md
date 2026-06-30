@@ -7,8 +7,9 @@ App web para convertir imágenes en arte ASCII. Hecha con **Vite + React**.
 - Subida de imagen o **vídeo (.mp4, .webm…)** por botón/arrastrar, **o webcam en tiempo real**.
 - Reproductor de vídeo con play/pausa y barra de progreso.
 - Exportar el vídeo ASCII como **GIF** o **WebM**.
-- **Visualizador de audio**: sube un `.mp3`/audio y reacciona a la música en ASCII
-  (barras de espectro, forma de onda o barras espejo), con exportación a **WebM con audio**.
+- **Visualizador de audio**: sube un `.mp3`/audio y reacciona a la música en ASCII,
+  con escala logarítmica de frecuencias y 8 modos (Bar, Wave, Line, Radial Bars,
+  Mirror Bars, Mountain, Blob, Siri), con exportación a **WebM con audio**.
 - Slider de ancho/resolución (20–240 caracteres).
 - Varios sets de caracteres (`detallada`, `estandar`, `simple`, `bloques`) + opción de invertir.
 - Ajustes de imagen: brillo, contraste y gamma (con botón para restablecer).
