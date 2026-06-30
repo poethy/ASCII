@@ -8,7 +8,7 @@ App web para convertir imágenes en arte ASCII. Hecha con **Vite + React**.
 - Slider de ancho/resolución (20–240 caracteres).
 - Varios sets de caracteres (`detallada`, `estandar`, `simple`, `bloques`) + opción de invertir.
 - Modo color: cada carácter toma el color del píxel original.
-- Copiar al portapapeles y descargar como `.txt`.
+- Copiar al portapapeles y descargar como `.txt` o `.png` (respeta el color).
 
 ## Desarrollo
 

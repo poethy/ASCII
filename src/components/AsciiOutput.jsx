@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { asciiToText } from "../lib/asciiConverter";
+import { asciiToText, asciiToCanvas } from "../lib/asciiConverter";
 
 // Agrupa celdas consecutivas con el mismo color en un solo <span> para no
 // generar decenas de miles de nodos cuando se renderiza en color.
@@ -43,21 +43,33 @@ export default function AsciiOutput({ rows, colorMode }) {
     setTimeout(() => setCopiado(false), 1500);
   };
 
-  const descargar = () => {
-    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+  const descargarBlob = (blob, nombre) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "ascii-art.txt";
+    a.download = nombre;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const descargarTxt = () => {
+    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+    descargarBlob(blob, "ascii-art.txt");
+  };
+
+  const descargarPng = () => {
+    const canvas = asciiToCanvas(rows, { colorMode });
+    canvas.toBlob((blob) => {
+      if (blob) descargarBlob(blob, "ascii-art.png");
+    }, "image/png");
   };
 
   return (
     <div className="output">
       <div className="output__acciones">
         <button onClick={copiar}>{copiado ? "¡Copiado!" : "Copiar"}</button>
-        <button onClick={descargar}>Descargar .txt</button>
+        <button onClick={descargarTxt}>Descargar .txt</button>
+        <button onClick={descargarPng}>Descargar .png</button>
       </div>
 
       <pre className="ascii">

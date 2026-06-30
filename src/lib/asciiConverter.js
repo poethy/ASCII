@@ -64,3 +64,49 @@ export function imageToAscii(image, { width, charset, invert }) {
 export function asciiToText(rows) {
   return rows.map((row) => row.map((cell) => cell.char).join("")).join("\n");
 }
+
+/**
+ * Dibuja la matriz ASCII en un <canvas> para poder exportarla como imagen.
+ *
+ * @param {Array<Array<{char:string,r:number,g:number,b:number}>>} rows
+ * @param {object} opts
+ * @param {boolean} opts.colorMode - usa el color de cada celda; si no, monocromo.
+ * @param {number} opts.fontSize - tamaño de fuente en px.
+ * @param {string} opts.background - color de fondo.
+ * @param {string} opts.foreground - color del texto en modo monocromo.
+ * @returns {HTMLCanvasElement}
+ */
+export function asciiToCanvas(
+  rows,
+  { colorMode = false, fontSize = 12, background = "#000000", foreground = "#dddddd" } = {}
+) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const font = `${fontSize}px ui-monospace, Consolas, "Courier New", monospace`;
+
+  // Medir el ancho de carácter con la fuente final.
+  ctx.font = font;
+  const charW = ctx.measureText("M").width;
+  const lineH = fontSize; // coincide con el line-height de la vista previa
+
+  const cols = rows[0]?.length ?? 0;
+  canvas.width = Math.max(1, Math.ceil(charW * cols));
+  canvas.height = Math.max(1, Math.ceil(lineH * rows.length));
+
+  // Redimensionar el canvas resetea el contexto: re-aplicar la fuente.
+  ctx.font = font;
+  ctx.textBaseline = "top";
+  ctx.fillStyle = background;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = 0; y < rows.length; y++) {
+    const row = rows[y];
+    for (let x = 0; x < cols; x++) {
+      const cell = row[x];
+      if (cell.char === " ") continue; // el fondo ya cubre los espacios
+      ctx.fillStyle = colorMode ? `rgb(${cell.r},${cell.g},${cell.b})` : foreground;
+      ctx.fillText(cell.char, x * charW, y * lineH);
+    }
+  }
+  return canvas;
+}
