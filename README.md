@@ -7,6 +7,8 @@ App web para convertir imágenes en arte ASCII. Hecha con **Vite + React**.
 - Subida de imagen o **vídeo (.mp4, .webm…)** por botón/arrastrar, **o webcam en tiempo real**.
 - Reproductor de vídeo con play/pausa y barra de progreso.
 - Exportar el vídeo ASCII como **GIF** o **WebM**.
+- **Visualizador de audio**: sube un `.mp3`/audio y reacciona a la música en ASCII
+  (barras de espectro, forma de onda o barras espejo), con exportación a **WebM con audio**.
 - Slider de ancho/resolución (20–240 caracteres).
 - Varios sets de caracteres (`detallada`, `estandar`, `simple`, `bloques`) + opción de invertir.
 - Ajustes de imagen: brillo, contraste y gamma (con botón para restablecer).
@@ -30,15 +32,18 @@ src/
     charsets.js        # rampas de caracteres (oscuro -> claro)
     asciiConverter.js  # lógica pura imagen -> celdas ASCII (+ Sobel, render a canvas)
     convertir.js       # mapeo opciones de la app -> imageToAscii (compartido)
-    videoExport.js     # exportación a GIF (gifenc) y WebM (MediaRecorder)
+    audioViz.js        # visualizador de audio (espectro / onda / espejo) -> ASCII
+    videoExport.js     # exportación a GIF (gifenc) y WebM (MediaRecorder, +audio)
     descargar.js       # utilidad para descargar un Blob
   components/
-    ImageUploader.jsx  # input + drag & drop (imagen o vídeo)
+    ImageUploader.jsx  # input + drag & drop (imagen, vídeo o audio)
     Controls.jsx       # ancho, charset, invertir, color, ajustes, bordes
-    VideoControls.jsx  # play/pausa, barra de progreso y exportación
+    VideoControls.jsx  # play/pausa, barra de progreso y exportación (vídeo)
+    AudioControls.jsx  # play/pausa, barra, estilo de viz y exportación (audio)
     AsciiOutput.jsx    # render (texto/color) + copiar/descargar
   hooks/
     useWebcam.js       # cámara + bucle de animación para el modo en vivo
+    useAudio.js        # grafo Web Audio + reproducción + análisis en tiempo real
   App.jsx              # estado y composición
 ```
 

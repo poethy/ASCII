@@ -3,11 +3,14 @@ import ImageUploader from "./components/ImageUploader";
 import Controls from "./components/Controls";
 import AsciiOutput from "./components/AsciiOutput";
 import VideoControls from "./components/VideoControls";
+import AudioControls from "./components/AudioControls";
 import { charsetPorDefecto } from "./lib/charsets";
 import { rowsDeFuente } from "./lib/convertir";
-import { exportarGif, exportarWebM } from "./lib/videoExport";
+import { exportarGif, exportarWebM, exportarAudioWebM } from "./lib/videoExport";
+import { visualizarAudio } from "./lib/audioViz";
 import { descargarBlob } from "./lib/descargar";
 import { useWebcam } from "./hooks/useWebcam";
+import { useAudio } from "./hooks/useAudio";
 import "./styles.css";
 
 export default function App() {
@@ -26,7 +29,11 @@ export default function App() {
     gamma: 1,
     edges: false,
     edgeThreshold: 20,
+    vizStyle: "spectrum",
   });
+
+  // Estado del audio subido.
+  const [audioUrl, setAudioUrl] = useState(null);
 
   // Estado del vídeo subido.
   const [videoUrl, setVideoUrl] = useState(null);
@@ -47,9 +54,18 @@ export default function App() {
 
   // --- Modo imagen estática ---
   useEffect(() => {
-    if (live || videoUrl || !image) return;
+    if (live || videoUrl || audioUrl || !image) return;
     setRows(rowsDeFuente(image, opts));
-  }, [live, videoUrl, image, opts]);
+  }, [live, videoUrl, audioUrl, image, opts]);
+
+  // --- Modo audio (visualizador) ---
+  const onAudioFrame = useCallback((analyser) => {
+    if (!analyser) return;
+    setRows(visualizarAudio(analyser, optsRef.current));
+  }, []);
+  const audio = useAudio(audioUrl, onAudioFrame, (err) => {
+    setErrorMsg("Error de audio: " + (err?.message || err));
+  });
 
   // --- Modo webcam en vivo ---
   const onFrame = useCallback((video) => {
@@ -125,9 +141,18 @@ export default function App() {
     setCur(0);
   };
 
+  const limpiarAudio = () => {
+    if (audio.playing) audio.toggle();
+    setAudioUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
   const usarImagen = (img, name) => {
     setLive(false);
     limpiarVideo();
+    limpiarAudio();
     setErrorMsg("");
     setImage(img);
     setNombre(name);
@@ -136,12 +161,25 @@ export default function App() {
   const usarVideo = (file) => {
     setLive(false);
     setImage(null);
+    limpiarAudio();
     setErrorMsg("");
     setNombre(file.name);
     setPlaying(false);
     setCur(0);
     setDur(0);
     setVideoUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+  };
+
+  const usarAudio = (file) => {
+    setLive(false);
+    setImage(null);
+    limpiarVideo();
+    setErrorMsg("");
+    setNombre(file.name);
+    setAudioUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return URL.createObjectURL(file);
     });
@@ -154,6 +192,7 @@ export default function App() {
     } else {
       setImage(null);
       limpiarVideo();
+      limpiarAudio();
       setNombre("");
       setLive(true);
     }
@@ -201,6 +240,30 @@ export default function App() {
     }
   };
 
+  const exportarAudio = async () => {
+    if (audio.playing) audio.toggle();
+    exportandoRef.current = "webm";
+    setExportando("webm");
+    setProgresoExp(0);
+    try {
+      await audio.prepararGrafo();
+      const blob = await exportarAudioWebM(
+        audio.audioRef.current,
+        audio.analyserRef.current,
+        audio.streamDestRef.current,
+        optsRef.current,
+        setProgresoExp
+      );
+      descargarBlob(blob, "ascii-audio.webm");
+    } catch (e) {
+      setErrorMsg("Error al exportar: " + (e?.message || e));
+    } finally {
+      exportandoRef.current = null;
+      setExportando(null);
+      setProgresoExp(0);
+    }
+  };
+
   return (
     <main className="app">
       <header>
@@ -209,7 +272,7 @@ export default function App() {
       </header>
 
       <div className="fuente">
-        <ImageUploader onImage={usarImagen} onVideo={usarVideo} />
+        <ImageUploader onImage={usarImagen} onVideo={usarVideo} onAudio={usarAudio} />
         <button
           type="button"
           className={`webcam-btn ${live ? "webcam-btn--activo" : ""}`}
@@ -224,7 +287,7 @@ export default function App() {
       <Controls
         {...opts}
         onChange={actualizar}
-        disabled={!image && !live && !videoUrl}
+        disabled={!image && !live && !videoUrl && !audioUrl}
       />
 
       {videoUrl && (
@@ -240,9 +303,24 @@ export default function App() {
         />
       )}
 
+      {audioUrl && (
+        <AudioControls
+          playing={audio.playing}
+          onTogglePlay={audio.toggle}
+          current={audio.current}
+          duration={audio.duration}
+          onSeek={audio.seek}
+          vizStyle={opts.vizStyle}
+          onStyleChange={(vizStyle) => actualizar({ vizStyle })}
+          onExport={exportarAudio}
+          exportando={exportando}
+          progreso={progresoExp}
+        />
+      )}
+
       <AsciiOutput rows={rows} colorMode={opts.colorMode} />
 
-      {/* Vídeos ocultos: webcam (srcObject) y archivo subido (src). */}
+      {/* Medios ocultos: webcam, vídeo subido y audio subido. */}
       <video ref={videoRef} playsInline muted style={{ display: "none" }} />
       <video
         ref={fileVideoRef}
@@ -251,6 +329,7 @@ export default function App() {
         muted
         style={{ display: "none" }}
       />
+      <audio ref={audio.audioRef} src={audioUrl ?? undefined} />
     </main>
   );
 }

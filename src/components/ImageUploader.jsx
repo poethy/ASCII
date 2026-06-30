@@ -1,10 +1,15 @@
 import { useRef, useState } from "react";
 
 // Carga el archivo elegido y lo enruta según su tipo:
+// - audio -> onAudio(file)
 // - vídeo -> onVideo(file)
 // - imagen -> carga un HTMLImageElement y onImage(img, nombre)
-function cargar(file, onImage, onVideo) {
+function cargar(file, onImage, onVideo, onAudio) {
   if (!file) return;
+  if (file.type.startsWith("audio/")) {
+    onAudio(file);
+    return;
+  }
   if (file.type.startsWith("video/")) {
     onVideo(file);
     return;
@@ -19,14 +24,14 @@ function cargar(file, onImage, onVideo) {
   img.src = url;
 }
 
-export default function ImageUploader({ onImage, onVideo }) {
+export default function ImageUploader({ onImage, onVideo, onAudio }) {
   const inputRef = useRef(null);
   const [arrastrando, setArrastrando] = useState(false);
 
   const handleDrop = (e) => {
     e.preventDefault();
     setArrastrando(false);
-    cargar(e.dataTransfer.files?.[0], onImage, onVideo);
+    cargar(e.dataTransfer.files?.[0], onImage, onVideo, onAudio);
   };
 
   return (
@@ -43,12 +48,12 @@ export default function ImageUploader({ onImage, onVideo }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*,video/*"
+        accept="image/*,video/*,audio/*"
         hidden
-        onChange={(e) => cargar(e.target.files?.[0], onImage, onVideo)}
+        onChange={(e) => cargar(e.target.files?.[0], onImage, onVideo, onAudio)}
       />
       <p>
-        <strong>Arrastra una imagen o vídeo aquí</strong> o haz clic para elegir un archivo
+        <strong>Arrastra una imagen, vídeo o audio aquí</strong> o haz clic para elegir un archivo
       </p>
     </div>
   );
