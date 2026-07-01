@@ -1,6 +1,27 @@
 :root {
   color-scheme: dark;
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+
+  /* Paleta "ASCII Workstation" */
+  --panel-1: #e6dcc4;
+  --panel-2: #d3c7a6;
+  --panel-3: #c1b48e;
+  --panel-border: #b4a67f;
+  --deck-1: #ddd2b8;
+  --deck-2: #c7ba95;
+  --deck-border: #b7a980;
+  --ink: #544a32;
+  --ink-soft: #6b6047;
+  --ink-mut: #8a7d5a;
+  --field: #f0e9d6;
+  --field-border: #a89a72;
+  --amber: #ffb000;
+  --amber-dim: #8a6a2c;
+  --screen-0: #0a0602;
+  --bezel: #221c12;
+  --led-green: #4fd07a;
+  --red: #c4341f;
+  --red-border: #9c2817;
 }
 
 * {
@@ -9,6 +30,6 @@
 
 body {
   margin: 0;
-  background: #0d0d0f;
-  color: #e8e8ea;
+  background: #0d0b08;
+  color: var(--ink);
 }

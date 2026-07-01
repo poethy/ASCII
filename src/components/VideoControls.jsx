@@ -17,11 +17,11 @@ export default function VideoControls({
 }) {
   const ocupado = !!exportando;
   return (
-    <div className="videoctl">
-      <div className="videoctl__fila">
+    <div className="transport">
+      <div className="transport__row">
         <button
           type="button"
-          className="videoctl__play"
+          className="transport__play"
           onClick={onTogglePlay}
           disabled={ocupado}
         >
@@ -36,20 +36,20 @@ export default function VideoControls({
           disabled={ocupado}
           onChange={(e) => onSeek(Number(e.target.value))}
         />
-        <span className="videoctl__time">
+        <span className="transport__time">
           {formatear(current)} / {formatear(duration)}
         </span>
       </div>
 
-      <div className="videoctl__fila">
-        <button type="button" onClick={() => onExport("gif")} disabled={ocupado}>
+      <div className="transport__row">
+        <button type="button" className="btn" onClick={() => onExport("gif")} disabled={ocupado}>
           Exportar GIF
         </button>
-        <button type="button" onClick={() => onExport("webm")} disabled={ocupado}>
+        <button type="button" className="btn" onClick={() => onExport("webm")} disabled={ocupado}>
           Exportar WebM
         </button>
         {ocupado && (
-          <span className="videoctl__prog">
+          <span className="transport__prog">
             Exportando {exportando.toUpperCase()}… {Math.round(progreso * 100)}%
           </span>
         )}

@@ -1,6 +1,8 @@
-# Conversor de Imágenes a ASCII
+# ASCII-TEXTRONIX · Model B-84
 
-App web para convertir imágenes en arte ASCII. Hecha con **Vite + React**.
+Estación de trabajo ASCII con estética de terminal retro (pantalla CRT ámbar,
+deck de control de plástico crema). Convierte imágenes, vídeo, webcam y audio a
+arte ASCII. Hecha con **Vite + React**. Diseño importado desde Claude Design.
 
 ## Features
 

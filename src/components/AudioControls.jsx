@@ -26,11 +26,11 @@ export default function AudioControls({
 }) {
   const ocupado = !!exportando;
   return (
-    <div className="videoctl">
-      <div className="videoctl__fila">
+    <div className="transport">
+      <div className="transport__row">
         <button
           type="button"
-          className="videoctl__play"
+          className="transport__play"
           onClick={onTogglePlay}
           disabled={ocupado}
         >
@@ -45,14 +45,16 @@ export default function AudioControls({
           disabled={ocupado}
           onChange={(e) => onSeek(Number(e.target.value))}
         />
-        <span className="videoctl__time">
+        <span className="transport__time">
           {formatear(current)} / {formatear(duration)}
         </span>
       </div>
 
-      <div className="videoctl__fila">
+      <div className="transport__row">
         <label className="control">
-          <span>Estilo</span>
+          <span>
+            <span>Estilo</span>
+          </span>
           <select
             value={vizStyle}
             disabled={ocupado}
@@ -67,7 +69,9 @@ export default function AudioControls({
         </label>
 
         <label className="control">
-          <span>Paleta</span>
+          <span>
+            <span>Paleta</span>
+          </span>
           <select
             value={palette}
             disabled={ocupado}
@@ -82,7 +86,10 @@ export default function AudioControls({
         </label>
 
         <label className="control">
-          <span>Sensibilidad: {gain.toFixed(1)}x</span>
+          <span>
+            <span>Sensib.</span>
+            <span>{gain.toFixed(1)}x</span>
+          </span>
           <input
             type="range"
             min="0.2"
@@ -93,12 +100,14 @@ export default function AudioControls({
             onChange={(e) => onGainChange(Number(e.target.value))}
           />
         </label>
+      </div>
 
-        <button type="button" onClick={onExport} disabled={ocupado}>
+      <div className="transport__row">
+        <button type="button" className="btn" onClick={onExport} disabled={ocupado}>
           Exportar WebM (con audio)
         </button>
         {ocupado && (
-          <span className="videoctl__prog">
+          <span className="transport__prog">
             Exportando… {Math.round(progreso * 100)}%
           </span>
         )}

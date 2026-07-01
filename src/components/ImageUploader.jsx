@@ -52,9 +52,15 @@ export default function ImageUploader({ onImage, onVideo, onAudio }) {
         hidden
         onChange={(e) => cargar(e.target.files?.[0], onImage, onVideo, onAudio)}
       />
-      <p>
-        <strong>Arrastra una imagen, vídeo o audio aquí</strong> o haz clic para elegir un archivo
-      </p>
+      <div className="uploader__icon">&#9679;</div>
+      <div>
+        <div className="uploader__title">
+          {arrastrando ? "SUELTA AQUÍ" : "BANDEJA DE CARGA"}
+        </div>
+        <div className="uploader__sub">
+          {arrastrando ? "" : "IMAGEN · VÍDEO · AUDIO"}
+        </div>
+      </div>
     </div>
   );
 }

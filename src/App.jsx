@@ -4,6 +4,7 @@ import Controls from "./components/Controls";
 import AsciiOutput from "./components/AsciiOutput";
 import VideoControls from "./components/VideoControls";
 import AudioControls from "./components/AudioControls";
+import { asciiToText, asciiToCanvas } from "./lib/asciiConverter";
 import { charsetPorDefecto } from "./lib/charsets";
 import { rowsDeFuente } from "./lib/convertir";
 import { exportarGif, exportarWebM, exportarAudioWebM } from "./lib/videoExport";
@@ -19,10 +20,11 @@ export default function App() {
   const [live, setLive] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [rows, setRows] = useState(null);
+  const [copiado, setCopiado] = useState(false);
   const [opts, setOpts] = useState({
-    width: 100,
+    width: 120,
     charsetKey: charsetPorDefecto,
-    invert: false,
+    invert: true,
     colorMode: false,
     brightness: 0,
     contrast: 0,
@@ -34,21 +36,16 @@ export default function App() {
     gain: 1.5,
   });
 
-  // Estado del audio subido.
   const [audioUrl, setAudioUrl] = useState(null);
-
-  // Estado del vídeo subido.
   const [videoUrl, setVideoUrl] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [dur, setDur] = useState(0);
   const [cur, setCur] = useState(0);
-  const [exportando, setExportando] = useState(null); // 'gif' | 'webm' | null
+  const [exportando, setExportando] = useState(null);
   const [progresoExp, setProgresoExp] = useState(0);
 
   const fileVideoRef = useRef(null);
   const exportandoRef = useRef(null);
-
-  // Opciones más recientes, accesibles desde los bucles sin reiniciarlos.
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
@@ -60,16 +57,7 @@ export default function App() {
     setRows(rowsDeFuente(image, opts));
   }, [live, videoUrl, audioUrl, image, opts]);
 
-  // --- Modo audio (visualizador) ---
-  const onAudioFrame = useCallback((analyser) => {
-    if (!analyser) return;
-    setRows(visualizarAudio(analyser, optsRef.current));
-  }, []);
-  const audio = useAudio(audioUrl, onAudioFrame, (err) => {
-    setErrorMsg("Error de audio: " + (err?.message || err));
-  });
-
-  // --- Modo webcam en vivo ---
+  // --- Webcam ---
   const onFrame = useCallback((video) => {
     setRows(rowsDeFuente(video, optsRef.current));
   }, []);
@@ -78,7 +66,16 @@ export default function App() {
     setLive(false);
   });
 
-  // --- Vídeo: metadatos / fin / búsquedas manuales ---
+  // --- Audio (visualizador) ---
+  const onAudioFrame = useCallback((analyser) => {
+    if (!analyser) return;
+    setRows(visualizarAudio(analyser, optsRef.current));
+  }, []);
+  const audio = useAudio(audioUrl, onAudioFrame, (err) =>
+    setErrorMsg("Error de audio: " + (err?.message || err))
+  );
+
+  // --- Vídeo: metadatos / fin / búsquedas ---
   useEffect(() => {
     const v = fileVideoRef.current;
     if (!videoUrl || !v) return;
@@ -89,7 +86,7 @@ export default function App() {
     };
     const onEnded = () => setPlaying(false);
     const onSeeked = () => {
-      if (exportandoRef.current) return; // durante exportación no refrescamos la vista
+      if (exportandoRef.current) return;
       setRows(rowsDeFuente(v, optsRef.current));
       setCur(v.currentTime);
     };
@@ -103,7 +100,7 @@ export default function App() {
     };
   }, [videoUrl]);
 
-  // --- Vídeo: bucle de reproducción (~16 fps) mientras está en play ---
+  // --- Vídeo: bucle de reproducción ---
   useEffect(() => {
     const v = fileVideoRef.current;
     if (!videoUrl || !v || !playing) return;
@@ -126,7 +123,7 @@ export default function App() {
     };
   }, [videoUrl, playing]);
 
-  // --- Vídeo: re-render al cambiar opciones estando en pausa ---
+  // --- Vídeo: re-render al cambiar opciones en pausa ---
   useEffect(() => {
     const v = fileVideoRef.current;
     if (!videoUrl || !v || playing || exportandoRef.current) return;
@@ -142,7 +139,6 @@ export default function App() {
     setDur(0);
     setCur(0);
   };
-
   const limpiarAudio = () => {
     if (audio.playing) audio.toggle();
     setAudioUrl((prev) => {
@@ -159,7 +155,6 @@ export default function App() {
     setImage(img);
     setNombre(name);
   };
-
   const usarVideo = (file) => {
     setLive(false);
     setImage(null);
@@ -174,7 +169,6 @@ export default function App() {
       return URL.createObjectURL(file);
     });
   };
-
   const usarAudio = (file) => {
     setLive(false);
     setImage(null);
@@ -186,11 +180,10 @@ export default function App() {
       return URL.createObjectURL(file);
     });
   };
-
   const alternarWebcam = () => {
     setErrorMsg("");
     if (live) {
-      setLive(false); // congela el último fotograma
+      setLive(false);
     } else {
       setImage(null);
       limpiarVideo();
@@ -200,6 +193,7 @@ export default function App() {
     }
   };
 
+  // --- Transporte de vídeo ---
   const togglePlay = () => {
     const v = fileVideoRef.current;
     if (!v) return;
@@ -211,14 +205,14 @@ export default function App() {
       setPlaying(true);
     }
   };
-
   const onSeek = (t) => {
     const v = fileVideoRef.current;
     if (v) v.currentTime = t;
     setCur(t);
   };
 
-  const exportar = async (formato) => {
+  // --- Exportaciones ---
+  const exportarVideo = async (formato) => {
     const v = fileVideoRef.current;
     if (!v) return;
     v.pause();
@@ -241,7 +235,6 @@ export default function App() {
       setProgresoExp(0);
     }
   };
-
   const exportarAudio = async () => {
     if (audio.playing) audio.toggle();
     exportandoRef.current = "webm";
@@ -266,67 +259,135 @@ export default function App() {
     }
   };
 
-  return (
-    <main className="app">
-      <header>
-        <h1>Conversor de Imágenes a ASCII</h1>
-        {nombre && <p className="archivo">{nombre}</p>}
-      </header>
+  // --- Acciones de salida ---
+  const texto = rows ? asciiToText(rows) : "";
+  const copiar = async () => {
+    if (!rows) return;
+    await navigator.clipboard.writeText(texto);
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 1400);
+  };
+  const dlTxt = () => {
+    if (!rows) return;
+    descargarBlob(new Blob([texto], { type: "text/plain;charset=utf-8" }), "ascii-art.txt");
+  };
+  const dlPng = () => {
+    if (!rows) return;
+    asciiToCanvas(rows, { colorMode: opts.colorMode }).toBlob((b) => {
+      if (b) descargarBlob(b, "ascii-art.png");
+    }, "image/png");
+  };
 
-      <div className="fuente">
-        <ImageUploader onImage={usarImagen} onVideo={usarVideo} onAudio={usarAudio} />
-        <button
-          type="button"
-          className={`webcam-btn ${live ? "webcam-btn--activo" : ""}`}
-          onClick={alternarWebcam}
-        >
-          {live ? "■ Detener webcam" : "● Usar webcam"}
-        </button>
+  const hayFuente = !!image || live || !!videoUrl || !!audioUrl;
+  const enVivo = live || playing || audio.playing;
+  const dims = rows ? `${rows[0].length}×${rows.length}` : "";
+  const estado = enVivo ? "● EN VIVO" : rows ? "● LISTO" : "○ EN ESPERA";
+
+  return (
+    <div className="workstation">
+      <div className="panel">
+        <div className="panel__screw panel__screw--tl" />
+        <div className="panel__screw panel__screw--tr" />
+        <div className="panel__screw panel__screw--bl" />
+        <div className="panel__screw panel__screw--br" />
+
+        <div className="brandbar">
+          <div className="brandbar__left">
+            <div className="brandbar__led" />
+            <span className="brandbar__title">ASCII&#8209;TEXTRONIX</span>
+            <span className="brandbar__badge">MODEL&nbsp;B&#8209;84</span>
+          </div>
+          <span className="brandbar__dims">{nombre || dims}</span>
+        </div>
+
+        <div className="deck">
+          <div className="screen-col">
+            <div className="bezel">
+              <div className="crt">
+                <div className="crt__top">
+                  <span className="crt__label">SALIDA</span>
+                  <span className="crt__cursor" />
+                  <span className="crt__status">{estado}</span>
+                </div>
+                <div className="crt__view">
+                  {rows ? (
+                    <AsciiOutput rows={rows} colorMode={opts.colorMode} />
+                  ) : (
+                    <div className="crt__awaiting">
+                      &gt; ESPERANDO SEÑAL
+                      <br />
+                      <span>arrastra una imagen, vídeo o audio · o inicia la webcam</span>
+                    </div>
+                  )}
+                </div>
+                <div className="crt__scanlines" />
+                <div className="crt__vignette" />
+              </div>
+            </div>
+
+            <ImageUploader onImage={usarImagen} onVideo={usarVideo} onAudio={usarAudio} />
+
+            <div className="actions">
+              <button
+                className={`btn ${live ? "btn--danger" : ""}`}
+                onClick={alternarWebcam}
+              >
+                {live ? "■ Detener webcam" : "● Webcam"}
+              </button>
+              <button className="btn" onClick={copiar} disabled={!rows}>
+                {copiado ? "¡Copiado!" : "Copiar texto"}
+              </button>
+              <button className="btn" onClick={dlTxt} disabled={!rows}>
+                Guardar .txt
+              </button>
+              <button className="btn" onClick={dlPng} disabled={!rows}>
+                Guardar .png
+              </button>
+            </div>
+
+            {errorMsg && <p className="error">{errorMsg}</p>}
+
+            {videoUrl && (
+              <VideoControls
+                playing={playing}
+                onTogglePlay={togglePlay}
+                current={cur}
+                duration={dur}
+                onSeek={onSeek}
+                onExport={exportarVideo}
+                exportando={exportando}
+                progreso={progresoExp}
+              />
+            )}
+
+            {audioUrl && (
+              <AudioControls
+                playing={audio.playing}
+                onTogglePlay={audio.toggle}
+                current={audio.current}
+                duration={audio.duration}
+                onSeek={audio.seek}
+                vizStyle={opts.vizStyle}
+                onStyleChange={(vizStyle) => actualizar({ vizStyle })}
+                palette={opts.palette}
+                onPaletteChange={(palette) => actualizar({ palette })}
+                gain={opts.gain}
+                onGainChange={(gain) => actualizar({ gain })}
+                onExport={exportarAudio}
+                exportando={exportando}
+                progreso={progresoExp}
+              />
+            )}
+          </div>
+
+          <div className="control-deck">
+            <div className="control-deck__title">PANEL DE CONTROL</div>
+            <Controls {...opts} onChange={actualizar} disabled={!hayFuente} />
+          </div>
+        </div>
       </div>
 
-      {errorMsg && <p className="error">{errorMsg}</p>}
-
-      <Controls
-        {...opts}
-        onChange={actualizar}
-        disabled={!image && !live && !videoUrl && !audioUrl}
-      />
-
-      {videoUrl && (
-        <VideoControls
-          playing={playing}
-          onTogglePlay={togglePlay}
-          current={cur}
-          duration={dur}
-          onSeek={onSeek}
-          onExport={exportar}
-          exportando={exportando}
-          progreso={progresoExp}
-        />
-      )}
-
-      {audioUrl && (
-        <AudioControls
-          playing={audio.playing}
-          onTogglePlay={audio.toggle}
-          current={audio.current}
-          duration={audio.duration}
-          onSeek={audio.seek}
-          vizStyle={opts.vizStyle}
-          onStyleChange={(vizStyle) => actualizar({ vizStyle })}
-          palette={opts.palette}
-          onPaletteChange={(palette) => actualizar({ palette })}
-          gain={opts.gain}
-          onGainChange={(gain) => actualizar({ gain })}
-          onExport={exportarAudio}
-          exportando={exportando}
-          progreso={progresoExp}
-        />
-      )}
-
-      <AsciiOutput rows={rows} colorMode={opts.colorMode} />
-
-      {/* Medios ocultos: webcam, vídeo subido y audio subido. */}
+      {/* Medios ocultos */}
       <video ref={videoRef} playsInline muted style={{ display: "none" }} />
       <video
         ref={fileVideoRef}
@@ -336,6 +397,6 @@ export default function App() {
         style={{ display: "none" }}
       />
       <audio ref={audio.audioRef} src={audioUrl ?? undefined} />
-    </main>
+    </div>
   );
 }
