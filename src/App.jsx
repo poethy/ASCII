@@ -11,13 +11,18 @@ import { exportarGif, exportarWebM, exportarAudioWebM } from "./lib/videoExport"
 import { visualizarAudio } from "./lib/audioViz";
 import { descargarBlob } from "./lib/descargar";
 import { translations, LangContext } from "./lib/i18n";
+import { leerIdioma, guardarIdioma } from "./lib/prefs";
 import { useWebcam } from "./hooks/useWebcam";
 import { useAudio } from "./hooks/useAudio";
 import "./styles.css";
 
 export default function App() {
-  const [lang, setLang] = useState("es");
+  const [lang, setLang] = useState(() => leerIdioma() || "es");
   const t = translations[lang];
+  const cambiarIdioma = (l) => {
+    setLang(l);
+    guardarIdioma(l);
+  };
   const [image, setImage] = useState(null);
   const [nombre, setNombre] = useState("");
   const [live, setLive] = useState(false);
@@ -306,13 +311,13 @@ export default function App() {
             <div className="langtoggle">
               <button
                 className={`langtoggle__btn ${lang === "en" ? "langtoggle__btn--on" : ""}`}
-                onClick={() => setLang("en")}
+                onClick={() => cambiarIdioma("en")}
               >
                 EN
               </button>
               <button
                 className={`langtoggle__btn ${lang === "es" ? "langtoggle__btn--on" : ""}`}
-                onClick={() => setLang("es")}
+                onClick={() => cambiarIdioma("es")}
               >
                 ES
               </button>
