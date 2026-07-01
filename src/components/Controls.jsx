@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { charsets } from "../lib/charsets";
 import { listarPresets, obtenerPreset, guardarPreset, borrarPreset } from "../lib/presets";
+import { useT } from "../lib/i18n";
 
 function Toggle({ label, on, disabled, onClick }) {
   return (
@@ -21,6 +22,7 @@ function Toggle({ label, on, disabled, onClick }) {
 // las que renderiza este panel), así el preset también recuerda paleta,
 // estilo de visualizador y ganancia de audio.
 function Presets({ opts, onChange, disabled }) {
+  const t = useT();
   const [nombres, setNombres] = useState(() => listarPresets());
   const [seleccion, setSeleccion] = useState("");
   const [nombreNuevo, setNombreNuevo] = useState("");
@@ -56,7 +58,7 @@ function Presets({ opts, onChange, disabled }) {
     <div className="presets">
       <div className="control">
         <span>
-          <span>Presets</span>
+          <span>{t.presets}</span>
         </span>
         <select
           value={seleccion}
@@ -64,7 +66,7 @@ function Presets({ opts, onChange, disabled }) {
           onChange={(e) => setSeleccion(e.target.value)}
         >
           <option value="">
-            {nombres.length === 0 ? "sin presets guardados" : "elegir preset..."}
+            {nombres.length === 0 ? t.presetNone : t.presetChoose}
           </option>
           {nombres.map((n) => (
             <option key={n} value={n}>
@@ -75,7 +77,7 @@ function Presets({ opts, onChange, disabled }) {
       </div>
       <div className="presets__row">
         <button type="button" className="btn" disabled={disabled || !seleccion} onClick={cargar}>
-          Cargar
+          {t.presetLoad}
         </button>
         <button
           type="button"
@@ -83,14 +85,14 @@ function Presets({ opts, onChange, disabled }) {
           disabled={disabled || !seleccion}
           onClick={borrar}
         >
-          Borrar
+          {t.presetDelete}
         </button>
       </div>
       <div className="presets__row">
         <input
           type="text"
           className="presets__input"
-          placeholder="nombre del preset"
+          placeholder={t.presetName}
           value={nombreNuevo}
           disabled={disabled}
           maxLength={40}
@@ -103,7 +105,7 @@ function Presets({ opts, onChange, disabled }) {
           disabled={disabled || !nombreNuevo.trim()}
           onClick={guardar}
         >
-          Guardar
+          {t.presetSave}
         </button>
       </div>
     </div>
@@ -124,6 +126,7 @@ export default function Controls({
   disabled,
   ...resto
 }) {
+  const t = useT();
   const ajustesNeutros = brightness === 0 && contrast === 0 && gamma === 1;
   const opts = {
     width,
@@ -143,7 +146,7 @@ export default function Controls({
       <div className="controls" data-disabled={disabled}>
         <label className="control">
           <span>
-            <span>Ancho</span>
+            <span>{t.width}</span>
             <span>{width}</span>
           </span>
           <input
@@ -158,7 +161,7 @@ export default function Controls({
 
         <label className="control">
           <span>
-            <span>Caracteres</span>
+            <span>{t.charset}</span>
           </span>
           <select
             value={charsetKey}
@@ -167,7 +170,7 @@ export default function Controls({
           >
             {Object.keys(charsets).map((key) => (
               <option key={key} value={key}>
-                {key}
+                {t.charsetLabels[key] || key}
               </option>
             ))}
           </select>
@@ -175,7 +178,7 @@ export default function Controls({
 
         <label className="control">
           <span>
-            <span>Brillo</span>
+            <span>{t.brightness}</span>
             <span>{brightness}</span>
           </span>
           <input
@@ -190,7 +193,7 @@ export default function Controls({
 
         <label className="control">
           <span>
-            <span>Contraste</span>
+            <span>{t.contrast}</span>
             <span>{contrast}</span>
           </span>
           <input
@@ -205,7 +208,7 @@ export default function Controls({
 
         <label className="control">
           <span>
-            <span>Gamma</span>
+            <span>{t.gamma}</span>
             <span>{gamma.toFixed(1)}</span>
           </span>
           <input
@@ -221,7 +224,7 @@ export default function Controls({
 
         <label className="control">
           <span>
-            <span>Umbral bordes</span>
+            <span>{t.edgeThr}</span>
             <span>{edgeThreshold}</span>
           </span>
           <input
@@ -237,19 +240,19 @@ export default function Controls({
 
       <div className="toggles">
         <Toggle
-          label="Invertir"
+          label={t.invert}
           on={invert}
           disabled={disabled}
           onClick={() => onChange({ invert: !invert })}
         />
         <Toggle
-          label="Color"
+          label={t.color}
           on={colorMode}
           disabled={disabled}
           onClick={() => onChange({ colorMode: !colorMode })}
         />
         <Toggle
-          label="Bordes"
+          label={t.edges}
           on={edges}
           disabled={disabled}
           onClick={() => onChange({ edges: !edges })}
@@ -260,7 +263,7 @@ export default function Controls({
           disabled={disabled || ajustesNeutros}
           onClick={() => onChange({ brightness: 0, contrast: 0, gamma: 1 })}
         >
-          Reiniciar ajustes
+          {t.reset}
         </button>
       </div>
 

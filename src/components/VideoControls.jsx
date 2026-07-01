@@ -1,3 +1,5 @@
+import { useT } from "../lib/i18n";
+
 function formatear(s) {
   s = Math.max(0, s || 0);
   const m = Math.floor(s / 60);
@@ -15,6 +17,7 @@ export default function VideoControls({
   exportando,
   progreso,
 }) {
+  const t = useT();
   const ocupado = !!exportando;
   return (
     <div className="transport">
@@ -43,14 +46,14 @@ export default function VideoControls({
 
       <div className="transport__row">
         <button type="button" className="btn" onClick={() => onExport("gif")} disabled={ocupado}>
-          Exportar GIF
+          {t.exportGif}
         </button>
         <button type="button" className="btn" onClick={() => onExport("webm")} disabled={ocupado}>
-          Exportar WebM
+          {t.exportWebm}
         </button>
         {ocupado && (
           <span className="transport__prog">
-            Exportando {exportando.toUpperCase()}… {Math.round(progreso * 100)}%
+            {t.exporting} {exportando.toUpperCase()}… {Math.round(progreso * 100)}%
           </span>
         )}
       </div>

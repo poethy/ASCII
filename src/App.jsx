@@ -10,11 +10,14 @@ import { rowsDeFuente } from "./lib/convertir";
 import { exportarGif, exportarWebM, exportarAudioWebM } from "./lib/videoExport";
 import { visualizarAudio } from "./lib/audioViz";
 import { descargarBlob } from "./lib/descargar";
+import { translations, LangContext } from "./lib/i18n";
 import { useWebcam } from "./hooks/useWebcam";
 import { useAudio } from "./hooks/useAudio";
 import "./styles.css";
 
 export default function App() {
+  const [lang, setLang] = useState("es");
+  const t = translations[lang];
   const [image, setImage] = useState(null);
   const [nombre, setNombre] = useState("");
   const [live, setLive] = useState(false);
@@ -62,7 +65,7 @@ export default function App() {
     setRows(rowsDeFuente(video, optsRef.current));
   }, []);
   const videoRef = useWebcam(live, onFrame, (err) => {
-    setErrorMsg("No se pudo acceder a la cámara: " + (err?.message || err));
+    setErrorMsg(t.camError + (err?.message || err));
     setLive(false);
   });
 
@@ -72,7 +75,7 @@ export default function App() {
     setRows(visualizarAudio(analyser, optsRef.current));
   }, []);
   const audio = useAudio(audioUrl, onAudioFrame, (err) =>
-    setErrorMsg("Error de audio: " + (err?.message || err))
+    setErrorMsg(t.audioError + (err?.message || err))
   );
 
   // --- Vídeo: metadatos / fin / búsquedas ---
@@ -228,7 +231,7 @@ export default function App() {
           : await exportarWebM(v, o, setProgresoExp);
       descargarBlob(blob, `ascii.${formato}`);
     } catch (e) {
-      setErrorMsg("Error al exportar: " + (e?.message || e));
+      setErrorMsg(t.exportError + (e?.message || e));
     } finally {
       exportandoRef.current = null;
       setExportando(null);
@@ -251,7 +254,7 @@ export default function App() {
       );
       descargarBlob(blob, "ascii-audio.webm");
     } catch (e) {
-      setErrorMsg("Error al exportar: " + (e?.message || e));
+      setErrorMsg(t.exportError + (e?.message || e));
     } finally {
       exportandoRef.current = null;
       setExportando(null);
@@ -281,9 +284,10 @@ export default function App() {
   const hayFuente = !!image || live || !!videoUrl || !!audioUrl;
   const enVivo = live || playing || audio.playing;
   const dims = rows ? `${rows[0].length}×${rows.length}` : "";
-  const estado = enVivo ? "● EN VIVO" : rows ? "● LISTO" : "○ EN ESPERA";
+  const estado = enVivo ? t.live : rows ? t.ready : t.idle;
 
   return (
+    <LangContext.Provider value={t}>
     <div className="workstation">
       <div className="panel">
         <div className="panel__screw panel__screw--tl" />
@@ -297,7 +301,23 @@ export default function App() {
             <span className="brandbar__title">ASCII&#8209;TEXTRONIX</span>
             <span className="brandbar__badge">MODEL&nbsp;B&#8209;84</span>
           </div>
-          <span className="brandbar__dims">{nombre || dims}</span>
+          <div className="brandbar__right">
+            <span className="brandbar__dims">{nombre || dims}</span>
+            <div className="langtoggle">
+              <button
+                className={`langtoggle__btn ${lang === "en" ? "langtoggle__btn--on" : ""}`}
+                onClick={() => setLang("en")}
+              >
+                EN
+              </button>
+              <button
+                className={`langtoggle__btn ${lang === "es" ? "langtoggle__btn--on" : ""}`}
+                onClick={() => setLang("es")}
+              >
+                ES
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="deck">
@@ -305,7 +325,7 @@ export default function App() {
             <div className="bezel">
               <div className="crt">
                 <div className="crt__top">
-                  <span className="crt__label">SALIDA</span>
+                  <span className="crt__label">{t.output}</span>
                   <span className="crt__cursor" />
                   <span className="crt__status">{estado}</span>
                 </div>
@@ -314,9 +334,9 @@ export default function App() {
                     <AsciiOutput rows={rows} colorMode={opts.colorMode} />
                   ) : (
                     <div className="crt__awaiting">
-                      &gt; ESPERANDO SEÑAL
+                      {t.awaiting}
                       <br />
-                      <span>arrastra una imagen, vídeo o audio · o inicia la webcam</span>
+                      <span>{t.awaitingSub}</span>
                     </div>
                   )}
                 </div>
@@ -332,16 +352,16 @@ export default function App() {
                 className={`btn ${live ? "btn--danger" : ""}`}
                 onClick={alternarWebcam}
               >
-                {live ? "■ Detener webcam" : "● Webcam"}
+                {live ? t.webcamStop : t.webcam}
               </button>
               <button className="btn" onClick={copiar} disabled={!rows}>
-                {copiado ? "¡Copiado!" : "Copiar texto"}
+                {copiado ? t.copied : t.copy}
               </button>
               <button className="btn" onClick={dlTxt} disabled={!rows}>
-                Guardar .txt
+                {t.saveTxt}
               </button>
               <button className="btn" onClick={dlPng} disabled={!rows}>
-                Guardar .png
+                {t.savePng}
               </button>
             </div>
 
@@ -381,7 +401,7 @@ export default function App() {
           </div>
 
           <div className="control-deck">
-            <div className="control-deck__title">PANEL DE CONTROL</div>
+            <div className="control-deck__title">{t.controlPanel}</div>
             <Controls {...opts} onChange={actualizar} disabled={!hayFuente} />
           </div>
         </div>
@@ -398,5 +418,6 @@ export default function App() {
       />
       <audio ref={audio.audioRef} src={audioUrl ?? undefined} />
     </div>
+    </LangContext.Provider>
   );
 }

@@ -95,10 +95,36 @@
   border-radius: 3px;
   padding: 2px 8px;
 }
+.brandbar__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 .brandbar__dims {
   font-size: 11px;
   color: var(--ink-mut);
   letter-spacing: 1px;
+}
+.langtoggle {
+  display: flex;
+  gap: 3px;
+  border: 1px solid var(--field-border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.langtoggle__btn {
+  background: transparent;
+  color: #7a6e4d;
+  border: none;
+  padding: 4px 12px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.langtoggle__btn--on {
+  background: var(--amber-dim);
+  color: #f4ecd8;
 }
 
 /* --- Distribución de dos columnas (llena la altura) --- */

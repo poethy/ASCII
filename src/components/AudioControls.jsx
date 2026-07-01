@@ -1,5 +1,6 @@
 import { estilosViz } from "../lib/audioViz";
 import { paletas } from "../lib/palettes";
+import { useT } from "../lib/i18n";
 
 function formatear(s) {
   s = Math.max(0, s || 0);
@@ -24,6 +25,7 @@ export default function AudioControls({
   exportando,
   progreso,
 }) {
+  const t = useT();
   const ocupado = !!exportando;
   return (
     <div className="transport">
@@ -53,7 +55,7 @@ export default function AudioControls({
       <div className="transport__row">
         <label className="control">
           <span>
-            <span>Estilo</span>
+            <span>{t.style}</span>
           </span>
           <select
             value={vizStyle}
@@ -70,7 +72,7 @@ export default function AudioControls({
 
         <label className="control">
           <span>
-            <span>Paleta</span>
+            <span>{t.palette}</span>
           </span>
           <select
             value={palette}
@@ -87,7 +89,7 @@ export default function AudioControls({
 
         <label className="control">
           <span>
-            <span>Sensib.</span>
+            <span>{t.sensitivity}</span>
             <span>{gain.toFixed(1)}x</span>
           </span>
           <input
@@ -104,11 +106,11 @@ export default function AudioControls({
 
       <div className="transport__row">
         <button type="button" className="btn" onClick={onExport} disabled={ocupado}>
-          Exportar WebM (con audio)
+          {t.exportAudioWebm}
         </button>
         {ocupado && (
           <span className="transport__prog">
-            Exportando… {Math.round(progreso * 100)}%
+            {t.exporting}… {Math.round(progreso * 100)}%
           </span>
         )}
       </div>

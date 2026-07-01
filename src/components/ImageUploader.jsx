@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useT } from "../lib/i18n";
 
 // Carga el archivo elegido y lo enruta según su tipo:
 // - audio -> onAudio(file)
@@ -25,6 +26,7 @@ function cargar(file, onImage, onVideo, onAudio) {
 }
 
 export default function ImageUploader({ onImage, onVideo, onAudio }) {
+  const t = useT();
   const inputRef = useRef(null);
   const [arrastrando, setArrastrando] = useState(false);
 
@@ -55,11 +57,9 @@ export default function ImageUploader({ onImage, onVideo, onAudio }) {
       <div className="uploader__icon">&#9679;</div>
       <div>
         <div className="uploader__title">
-          {arrastrando ? "SUELTA AQUÍ" : "BANDEJA DE CARGA"}
+          {arrastrando ? t.dropHere : t.loadBay}
         </div>
-        <div className="uploader__sub">
-          {arrastrando ? "" : "IMAGEN · VÍDEO · AUDIO"}
-        </div>
+        <div className="uploader__sub">{arrastrando ? "" : t.loadSub}</div>
       </div>
     </div>
   );
