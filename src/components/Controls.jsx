@@ -40,7 +40,7 @@ export default function Controls({
           <input
             type="range"
             min="20"
-            max="200"
+            max="240"
             value={width}
             disabled={disabled}
             onChange={(e) => onChange({ width: Number(e.target.value) })}
