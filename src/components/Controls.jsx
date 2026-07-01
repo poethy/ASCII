@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { charsets } from "../lib/charsets";
+import { listarPresets, obtenerPreset, guardarPreset, borrarPreset } from "../lib/presets";
 
 function Toggle({ label, on, disabled, onClick }) {
   return (
@@ -14,6 +16,100 @@ function Toggle({ label, on, disabled, onClick }) {
   );
 }
 
+// Guardar / cargar / borrar combinaciones completas de opciones en
+// localStorage. `opts` son todas las opciones actuales de la app (no solo
+// las que renderiza este panel), así el preset también recuerda paleta,
+// estilo de visualizador y ganancia de audio.
+function Presets({ opts, onChange, disabled }) {
+  const [nombres, setNombres] = useState(() => listarPresets());
+  const [seleccion, setSeleccion] = useState("");
+  const [nombreNuevo, setNombreNuevo] = useState("");
+
+  const refrescar = () => {
+    const lista = listarPresets();
+    setNombres(lista);
+    if (!lista.includes(seleccion)) setSeleccion("");
+  };
+
+  const guardar = () => {
+    const nombre = nombreNuevo.trim();
+    if (!nombre) return;
+    guardarPreset(nombre, opts);
+    setNombreNuevo("");
+    setSeleccion(nombre);
+    setNombres(listarPresets());
+  };
+
+  const cargar = () => {
+    if (!seleccion) return;
+    const preset = obtenerPreset(seleccion);
+    if (preset) onChange(preset);
+  };
+
+  const borrar = () => {
+    if (!seleccion) return;
+    borrarPreset(seleccion);
+    refrescar();
+  };
+
+  return (
+    <div className="presets">
+      <div className="control">
+        <span>
+          <span>Presets</span>
+        </span>
+        <select
+          value={seleccion}
+          disabled={disabled || nombres.length === 0}
+          onChange={(e) => setSeleccion(e.target.value)}
+        >
+          <option value="">
+            {nombres.length === 0 ? "sin presets guardados" : "elegir preset..."}
+          </option>
+          {nombres.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="presets__row">
+        <button type="button" className="btn" disabled={disabled || !seleccion} onClick={cargar}>
+          Cargar
+        </button>
+        <button
+          type="button"
+          className="btn btn--danger"
+          disabled={disabled || !seleccion}
+          onClick={borrar}
+        >
+          Borrar
+        </button>
+      </div>
+      <div className="presets__row">
+        <input
+          type="text"
+          className="presets__input"
+          placeholder="nombre del preset"
+          value={nombreNuevo}
+          disabled={disabled}
+          maxLength={40}
+          onChange={(e) => setNombreNuevo(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && guardar()}
+        />
+        <button
+          type="button"
+          className="btn"
+          disabled={disabled || !nombreNuevo.trim()}
+          onClick={guardar}
+        >
+          Guardar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Controls({
   width,
   charsetKey,
@@ -26,8 +122,21 @@ export default function Controls({
   edgeThreshold,
   onChange,
   disabled,
+  ...resto
 }) {
   const ajustesNeutros = brightness === 0 && contrast === 0 && gamma === 1;
+  const opts = {
+    width,
+    charsetKey,
+    invert,
+    colorMode,
+    brightness,
+    contrast,
+    gamma,
+    edges,
+    edgeThreshold,
+    ...resto,
+  };
 
   return (
     <>
@@ -154,6 +263,8 @@ export default function Controls({
           Reiniciar ajustes
         </button>
       </div>
+
+      <Presets opts={opts} onChange={onChange} disabled={disabled} />
     </>
   );
 }

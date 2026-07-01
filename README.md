@@ -19,6 +19,9 @@ arte ASCII. Hecha con **Vite + React**. Diseño importado desde Claude Design.
 - Modo **detección de bordes (Sobel)**: line-art con caracteres direccionales (`| - / \`) y umbral ajustable.
 - Modo color: cada carácter toma el color del píxel original.
 - Copiar al portapapeles y descargar como `.txt` o `.png` (respeta el color).
+- **Presets**: guarda la combinación completa de opciones (ancho, charset,
+  ajustes de imagen, bordes, paleta, ganancia...) con un nombre en el panel de
+  control, y cárgala o bórrala luego. Persisten en `localStorage`.
 
 ## Desarrollo
 
