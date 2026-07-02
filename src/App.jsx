@@ -39,6 +39,7 @@ export default function App() {
     gamma: 1,
     edges: false,
     edgeThreshold: 20,
+    braille: false,
     vizStyle: "bar",
     palette: "clasico",
     gain: 1.5,

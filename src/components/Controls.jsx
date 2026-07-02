@@ -122,6 +122,7 @@ export default function Controls({
   gamma,
   edges,
   edgeThreshold,
+  braille,
   onChange,
   disabled,
   ...resto
@@ -138,6 +139,7 @@ export default function Controls({
     gamma,
     edges,
     edgeThreshold,
+    braille,
     ...resto,
   };
 
@@ -256,6 +258,12 @@ export default function Controls({
           on={edges}
           disabled={disabled}
           onClick={() => onChange({ edges: !edges })}
+        />
+        <Toggle
+          label={t.braille}
+          on={braille}
+          disabled={disabled}
+          onClick={() => onChange({ braille: !braille })}
         />
         <button
           type="button"

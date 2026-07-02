@@ -14,5 +14,6 @@ export function rowsDeFuente(fuente, o) {
     gamma: o.gamma,
     edges: o.edges,
     edgeThreshold: o.edgeThreshold,
+    braille: o.braille,
   });
 }

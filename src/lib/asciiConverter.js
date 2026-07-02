@@ -72,6 +72,63 @@ function caracterBorde(lum, x, y, cols, rows, umbral) {
   return "/";
 }
 
+// Valor de bit de cada punto braille según su posición (x:0..1, y:0..3) dentro
+// de la celda de 2×4 puntos. El carácter es U+2800 + (suma de bits activos).
+const BRAILLE_DOTS = [
+  [0x01, 0x02, 0x04, 0x40],
+  [0x08, 0x10, 0x20, 0x80],
+];
+
+/**
+ * Convierte la imagen a arte braille: cada carácter (U+28xx) representa una
+ * rejilla de 2×4 puntos, muestreando la imagen a cols*2 × rows*4 y encendiendo
+ * un punto cuando el subpíxel es "tinta" (oscuro, o claro si `invert`).
+ */
+function imagenABraille(image, cols, rows, lut, invert) {
+  const cw = cols * 2;
+  const ch = rows * 4;
+  const canvas = document.createElement("canvas");
+  canvas.width = cw;
+  canvas.height = ch;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(image, 0, 0, cw, ch);
+  const { data } = ctx.getImageData(0, 0, cw, ch);
+
+  const result = [];
+  for (let cy = 0; cy < rows; cy++) {
+    const row = [];
+    for (let cx = 0; cx < cols; cx++) {
+      let bits = 0;
+      let rs = 0;
+      let gs = 0;
+      let bs = 0;
+      for (let dx = 0; dx < 2; dx++) {
+        for (let dy = 0; dy < 4; dy++) {
+          const i = ((cy * 4 + dy) * cw + (cx * 2 + dx)) * 4;
+          const r = lut[data[i]];
+          const g = lut[data[i + 1]];
+          const b = lut[data[i + 2]];
+          rs += r;
+          gs += g;
+          bs += b;
+          const lumv = 0.299 * r + 0.587 * g + 0.114 * b;
+          let on = lumv < 128; // píxel oscuro = punto (tinta)
+          if (invert) on = !on;
+          if (on) bits |= BRAILLE_DOTS[dx][dy];
+        }
+      }
+      row.push({
+        char: String.fromCharCode(0x2800 + bits),
+        r: Math.round(rs / 8),
+        g: Math.round(gs / 8),
+        b: Math.round(bs / 8),
+      });
+    }
+    result.push(row);
+  }
+  return result;
+}
+
 /**
  * Convierte una imagen ya cargada en una matriz de celdas ASCII.
  *
@@ -98,6 +155,7 @@ export function imageToAscii(
     gamma = 1,
     edges = false,
     edgeThreshold = 20,
+    braille = false,
   }
 ) {
   const cols = Math.max(1, Math.floor(width));
@@ -106,6 +164,12 @@ export function imageToAscii(
   const srcH = image.videoHeight || image.naturalHeight || image.height;
   const ratio = srcH / srcW;
   const rows = Math.max(1, Math.round(cols * ratio * ASPECTO_CARACTER));
+
+  const neutro = brightness === 0 && contrast === 0 && gamma === 1;
+  const lut = neutro ? LUT_IDENTIDAD : construirLUT(brightness, contrast, gamma);
+
+  // Modo braille: cada carácter cubre una rejilla de 2×4 puntos.
+  if (braille) return imagenABraille(image, cols, rows, lut, invert);
 
   // Canvas fuera de pantalla del tamaño de la rejilla ASCII: drawImage hace
   // el downscaling promediando los píxeles por nosotros.
@@ -118,9 +182,6 @@ export function imageToAscii(
   const { data } = ctx.getImageData(0, 0, cols, rows);
   const ramp = charset;
   const lastIndex = ramp.length - 1;
-
-  const neutro = brightness === 0 && contrast === 0 && gamma === 1;
-  const lut = neutro ? LUT_IDENTIDAD : construirLUT(brightness, contrast, gamma);
 
   // Primer paso: color ajustado por celda + rejilla de luminancia (la necesita
   // Sobel, que mira los vecinos de cada celda).

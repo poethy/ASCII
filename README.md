@@ -17,6 +17,7 @@ arte ASCII. Hecha con **Vite + React**. Diseño importado desde Claude Design.
 - Varios sets de caracteres (`detallada`, `estandar`, `simple`, `bloques`) + opción de invertir.
 - Ajustes de imagen: brillo, contraste y gamma (con botón para restablecer).
 - Modo **detección de bordes (Sobel)**: line-art con caracteres direccionales (`| - / \`) y umbral ajustable.
+- Modo **braille**: cada carácter (U+28xx) codifica una rejilla de 2×4 puntos → imágenes de puntos de alta resolución.
 - Modo color: cada carácter toma el color del píxel original.
 - Copiar al portapapeles y descargar como `.txt` o `.png` (respeta el color).
 - **Presets**: guarda la combinación completa de opciones (ancho, charset,
